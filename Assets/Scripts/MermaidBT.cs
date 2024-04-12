@@ -13,13 +13,13 @@ public class MermaidBT : MonoBehaviour
     private int[,] map;
     private int mapWidth;
     private int mapHeight;
-    private int treasure;
 
     // Movement
     private CharacterController characterController;
     private bool escape;
     [SerializeField]private GameObject diver;
     private Vector3 currentDirection;
+    private int timer = 0;
 
     [Header("Debugging")]
     public bool isDebugging = false;
@@ -36,8 +36,8 @@ public class MermaidBT : MonoBehaviour
     private void Start()
     {
         characterController = gameObject.GetComponent<CharacterController>();
-        CheckRespawnPos();
-        SwitchTree(SelectBehaviourTree(actionNum));
+        currentDirection = Vector3.forward;
+        CreateTree(MermaidBehaviour());
     }
 
     private void Update()
@@ -68,7 +68,7 @@ public class MermaidBT : MonoBehaviour
         diver = null;
     }
 
-    private void SwitchTree(Root t)
+    private void CreateTree(Root t)
     {
         if (tree != null) tree.Stop();
 
@@ -82,21 +82,9 @@ public class MermaidBT : MonoBehaviour
         tree.Start();
     }
 
-    private Root SelectBehaviourTree(int action)
+    private Root MermaidBehaviour()
     {
-        switch (action)
-        {
-            case 0:
-                return EscapeBehaviour();
-
-            default:
-                return new Root(new Action(() => Idle()));
-        }
-    }
-
-    private Root EscapeBehaviour()
-    {
-        Node idle = new Action(() => Idle());
+        Node idle = WanderBehaviour();
         Node escape = EscapeFromDiver();
         Node bb = new BlackboardCondition("Escape",
                                            Operator.IS_EQUAL, true,
@@ -109,9 +97,9 @@ public class MermaidBT : MonoBehaviour
 
     private Node EscapeFromDiver()
     {
-        Debug.Log("escaping");
+        //Debug.Log("escaping");
         Node move = new Action(() => Move(speed));
-        Node detect = new Action(() => ChangeDirection());
+        Node detect = new Action(() => FleeDirection());
         Node bb = new BlackboardCondition("Reef",
                                             Operator.IS_EQUAL, false,
                                             Stops.IMMEDIATE_RESTART,
@@ -123,9 +111,29 @@ public class MermaidBT : MonoBehaviour
         return seq;
     }
 
-    private void Idle()
+    private Node WanderBehaviour()
     {
-        Move(0);
+        Node turn = new Action(() => ChangeDirection());
+        Node bb = new BlackboardCondition("Reef",
+                                            Operator.IS_EQUAL, true,
+                                            Stops.IMMEDIATE_RESTART,
+                                            turn);
+        Node wander = new Action(() => Wander());
+        Node selector = new Selector(bb, wander);
+        return selector;
+    }
+
+    private void Wander()
+    {
+        timer++;
+        if (timer > 10)
+        {
+            currentDirection = Quaternion.Euler(0, 90, 0) * currentDirection;
+            timer = 0;
+        }
+        Move(speed / 5);
+        //flag = !flag;
+
     }
 
     private void Move(float spd)
@@ -133,9 +141,46 @@ public class MermaidBT : MonoBehaviour
         characterController.Move(currentDirection * spd * Time.deltaTime);
     }
 
-    private void ChangeDirection()
+    private void FleeDirection()
     {
         currentDirection = new Vector3(transform.position.x - diver.transform.position.x, 0, transform.position.z - diver.transform.position.z).normalized;
+    }
+
+    private void ChangeDirection()
+    {
+        Move(0);
+
+        int direction = UnityEngine.Random.Range(0, 8);
+        switch (direction)
+        {
+            case 0:
+                currentDirection = Vector3.forward;
+                break;
+            case 1:
+                currentDirection = Vector3.right;
+                break;
+            case 2:
+                currentDirection = Vector3.back;
+                break;
+            case 3:
+                currentDirection = Vector3.left;
+                break;
+            case 4:
+                currentDirection = Vector3.forward + Vector3.left;
+                break;
+            case 5:
+                currentDirection = Vector3.forward + Vector3.right;
+                break;
+            case 6:
+                currentDirection = Vector3.back + Vector3.right;
+                break;
+            case 7:
+                currentDirection = Vector3.back + Vector3.left;
+                break;
+            default:
+                currentDirection = Vector3.zero;
+                break;
+        }
     }
 
     private void Disappear()
@@ -143,30 +188,12 @@ public class MermaidBT : MonoBehaviour
         escape = false;
         gameObject.SetActive(false);
         Debug.Log("disappear");
-        UnderseaReefGenerator.instance.SpawnMermaid(true, treasure);
+        UnderseaReefGenerator.instance.RespawnMermaid();
         Destroy(gameObject);
+
+        
     }
 
-    private void CheckRespawnPos()
-    {
-        if (UnderseaReefGenerator.instance.GetTreasurePos() != null)
-        {
-            float distance = mapWidth * mapHeight;
-            int i = 0;
-            Vector3 pos = Vector3.zero;
-            foreach(var t in UnderseaReefGenerator.instance.GetTreasurePos())
-            {
-                Vector3 treasurePos = new Vector3(t.GetX() - mapWidth / 2, 0, t.GetY() - mapHeight / 2);
-                float tmp = (treasurePos - transform.position).magnitude;
-                if (distance > tmp)
-                {
-                    treasure = i;
-                    distance = tmp;
-                }
-                ++i;
-            }
-        }
-    }
 
     private void EnvironmentDetect()
     {

@@ -1,12 +1,23 @@
 using NPBehave;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class DiverBT : MonoBehaviour
 {
+    enum Directions
+    {
+        Forward,
+        Right,
+        Back,
+        Left,
+        ForwardLeft,
+        ForwardRight,
+        BackRight,
+        BackLeft
+    }
     private Root tree;                  
     private Blackboard blackboard;
 
@@ -14,27 +25,31 @@ public class DiverBT : MonoBehaviour
     private int mapWidth;
     private int mapHeight;
 
-    [SerializeField]private Vector3 targetTreasurePos;
-    private Vector2Int targetTreasureIndex;
-    private bool detectTreasure;
+    // mermaid
+    private GameObject[] mermaidList;
+    private int targetMermaidIndex;
+    private float detectMermaidDistance;
+
 
     // Utility
-    private const int IDLE = 0;
-    private const int Explore = 1;
-    private const int CHASE = 2;
+    private const int Explore = 0;
+    private const int CHASE = 1;
     private int currentAction;
+    private Directions directionIndex;
     List<int> utilityScores;
 
 
     // Movement
     private CharacterController characterController;
-    private List<int> unMoveDirection;
     private Vector3 currentDirection;
+    private bool randomTurn = false;
+    private int timer = 0;
 
     [Header("Debugging")]
     public bool isDebugging = false;
     public int actionNum;
     public float speed = 10;
+    public GameObject diver;
 
     private void Awake()
     {
@@ -46,13 +61,16 @@ public class DiverBT : MonoBehaviour
     private void Start()
     {
         characterController = gameObject.GetComponent<CharacterController>();
-        currentDirection = ChangeDirection();
+
+        directionIndex = Directions.Forward;
+        ChangeDirection();
+
+        detectMermaidDistance = DetectNearestMermaid();
 
         currentAction = Explore;
         SwitchTree(SelectBehaviourTree(currentAction));
 
         utilityScores = new List<int>();
-        utilityScores.Add(0); // Idle
         utilityScores.Add(0); // Explore
         utilityScores.Add(0); // Chase
     }
@@ -62,11 +80,10 @@ public class DiverBT : MonoBehaviour
         if (isDebugging)
         {
             
-            SetColor(Color.black);
+            SetColor(Color.white);
             isDebugging = false;
         }
 
-        // credit from lab
         updateScores();
         int maxValue = utilityScores.Max(t => t);
         int maxIndex = utilityScores.IndexOf(maxValue);
@@ -76,26 +93,11 @@ public class DiverBT : MonoBehaviour
             currentAction = maxIndex;
             SwitchTree(SelectBehaviourTree(currentAction));
         }
-        if (targetTreasurePos == Vector3.zero)
-        {
-            Debug.Log("no target");
-        }
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.gameObject.layer == LayerMask.NameToLayer("Treasure"))
-        {
-            Debug.Log("find");
-
-            //taretTreasure = other.gameObject;
-            //detectTreasure = true;
-        }
     }
 
     private void OnDestroy()
     {
-        // 清理引用，防止内存泄漏
+        // prevent memory leak
         tree.Stop();
         tree = null;
         blackboard = null;
@@ -105,10 +107,10 @@ public class DiverBT : MonoBehaviour
     private void updateScores()
     {
         utilityScores[Explore] = 10;
-        float targetDistance = DetectNearestTreasure();
-        if (targetDistance < 30 && targetDistance > 1)
+        detectMermaidDistance = DetectNearestMermaid();
+        if (detectMermaidDistance < 30 && detectMermaidDistance > 1)
         {
-            utilityScores[CHASE] = (int)(200 / targetDistance);
+            utilityScores[CHASE] = (int)(200 / detectMermaidDistance);
         }
         else
             utilityScores[CHASE] = 5;
@@ -150,8 +152,11 @@ public class DiverBT : MonoBehaviour
 
     private Root ExploreBehaviour()
     {
-        Node sel = new Selector(TurnBehaviour(),
+        Node seq = new NPBehave.Sequence(RandomTurnBehaviour(),
                                 MoveBehaviour());
+        Node sel = new Selector(BoundaryBehaviour(),
+                                seq
+                                );
         Node service = new Service(0.2f, EnvironmentDetect, sel);
         return new Root(service);
     }
@@ -161,20 +166,27 @@ public class DiverBT : MonoBehaviour
         return new Root(new Action(() => Chase()));
     }
 
-    private Node TurnBehaviour()
+    private Node BoundaryBehaviour()
     {
         Node turn = new Action(() => ChangeDirection());
-        Node bb = new BlackboardCondition("Reef",
+        Node bb = new BlackboardCondition("Boundary",
                                             Operator.IS_EQUAL, true,
                                             Stops.IMMEDIATE_RESTART,
                                             turn);
         return bb;
     }
+    
 
     private Node MoveBehaviour()
     {
         Node move = new Action(() => Move(speed));
         return move;
+    }
+
+    private Node RandomTurnBehaviour()
+    {
+        Node randTurn = new Action(() => RandTurn());
+        return randTurn;
     }
 
     /**
@@ -185,28 +197,56 @@ public class DiverBT : MonoBehaviour
         characterController.Move(currentDirection * spd * Time.deltaTime);
     }
 
-    private Vector3 ChangeDirection()
+    private void RandTurn()
+    {
+        timer++;
+        if (timer > 50)
+        {
+            ChangeDirection();
+            timer = 0;
+        }
+    }
+
+    private void ChangeDirection()
     {
         Move(0);
-        int direction = UnityEngine.Random.Range(0, 4);
+        
+        int direction = UnityEngine.Random.Range(0, 8);
+        if (direction == (int)directionIndex)
+        {
+            direction = UnityEngine.Random.Range(0, 8);
+        }
         switch (direction)
         {
             case 0:
                 currentDirection = Vector3.forward;
-                return Vector3.forward;
+                break;
             case 1:
                 currentDirection = Vector3.right;
-                return Vector3.right;
+                break;
             case 2:
                 currentDirection = Vector3.back;
-                return Vector3.back;
+                break;
             case 3:
                 currentDirection = Vector3.left;
-                return Vector3.left;
+                break;
+            case 4:
+                currentDirection = Vector3.forward + Vector3.left;
+                break;
+            case 5:
+                currentDirection = Vector3.forward + Vector3.right;
+                break;
+            case 6:
+                currentDirection = Vector3.back + Vector3.right;
+                break;
+            case 7:
+                currentDirection = Vector3.back + Vector3.left;
+                break;
             default:
                 currentDirection = Vector3.zero;
-                return Vector3.zero;
+                break;
         }
+        directionIndex = (Directions)direction;
     }
 
     private void EnvironmentDetect()
@@ -214,43 +254,23 @@ public class DiverBT : MonoBehaviour
         // avoid out of boundary
         int x = Mathf.Clamp(Mathf.RoundToInt(transform.position.x + 2 * currentDirection.x) + mapWidth / 2, 0, mapWidth - 1);
         int z = Mathf.Clamp(Mathf.RoundToInt(transform.position.z + 2 * currentDirection.z) + mapHeight / 2, 0, mapHeight - 1);
+        blackboard["Boundary"] = (x == 0 || z == 0 || x == mapWidth - 1 || z == mapHeight - 1);
         blackboard["Reef"] = (map[x, z] == 1);
-        blackboard["Treasure"] = (map[x, z] == 2);
+        blackboard["RandomTurn"] = randomTurn;
     }
 
     private void Chase()
     {
-        
-        PathFinding();
-        currentDirection = (targetTreasurePos - transform.position).normalized;
+        if (mermaidList[targetMermaidIndex] != null)
+        currentDirection = (mermaidList[targetMermaidIndex].transform.position - transform.position).normalized;
         Move(speed);
-        //Debug.Log("Chase");
     }
 
-    private void PathFinding()
-    {
-        Vector2Int currentIndex = new Vector2Int(Mathf.RoundToInt(transform.position.x + mapWidth / 2), Mathf.RoundToInt(transform.position.y + mapHeight / 2));
-        AStarPathfinder pathFinder = new AStarPathfinder(currentIndex, targetTreasureIndex);
-        List<Vector2Int> path = pathFinder.FindPath();
-        if (path != null)
-        {
-            foreach (Vector2Int step in path)
-            {
-                if (step != currentIndex &&
-                        step != targetTreasureIndex)
-                {
-                    float xPos = step.x - (mapWidth / 2);
-                    float zPos = step.y - (mapHeight / 2);
-                    characterController.Move(new Vector3(xPos, transform.position.y, zPos) - transform.position);
-                }
-            }
-        }
-    }
-
-    
 
     private void Idle()
     {
+        SetColor(Color.white);
+        Move(0);
         Debug.Log("Idle");
     }
 
@@ -259,19 +279,22 @@ public class DiverBT : MonoBehaviour
         GetComponent<MeshRenderer>().material.SetColor("_Color", color);
     }
 
-    private float DetectNearestTreasure()
+
+    private float DetectNearestMermaid()
     {
         float distance = mapWidth * mapHeight;
-        foreach (var t in UnderseaReefGenerator.instance.GetTreasurePos())
+        
+        int index = 0;
+        mermaidList = GameObject.FindGameObjectsWithTag("Mermaid");
+        foreach (var m in mermaidList)
         {
-            Vector3 treasurePos = new Vector3(t.GetX() - mapWidth / 2, 0, t.GetY() - mapHeight / 2);
-            float tmp = (treasurePos - transform.position).magnitude;
+            float tmp = (m.transform.position - transform.position).magnitude;
             if (distance > tmp)
             {
                 distance = tmp;
-                targetTreasurePos = treasurePos;
-                targetTreasureIndex = new Vector2Int(t.GetX(), t.GetY());
+                targetMermaidIndex = index;
             }
+            ++index;
         }
 
         return distance;

@@ -147,7 +147,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7e5d0ea04a4e214d8d3bc7312993bf5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  taretTreasurePos: {x: 0, y: 0, z: 0}
+  targetTreasurePos: {x: 0, y: 0, z: 0}
   isDebugging: 1
   actionNum: 1
   speed: 10
+  diver: {fileID: 2346356969926953570, guid: 6e56cf8fdb33c7647becb77ac3778e22, type: 3}

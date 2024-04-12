@@ -14,9 +14,9 @@ GameObject:
   - component: {fileID: 3250776381497406092}
   - component: {fileID: -4500011315818285738}
   - component: {fileID: -3969697198903187435}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Mermaid
-  m_TagString: Untagged
+  m_TagString: Mermaid
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -105,7 +105,7 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 10
+  m_Radius: 3
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
@@ -150,4 +150,4 @@ MonoBehaviour:
   diver: {fileID: 0}
   isDebugging: 0
   actionNum: 0
-  speed: 10
+  speed: 12
