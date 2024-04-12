@@ -126,7 +126,7 @@ public class MermaidBT : MonoBehaviour
     private void Wander()
     {
         timer++;
-        if (timer > 10)
+        if (timer > 20)
         {
             currentDirection = Quaternion.Euler(0, 90, 0) * currentDirection;
             timer = 0;

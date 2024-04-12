@@ -430,6 +430,7 @@ GameObject:
   - component: {fileID: 963194228}
   - component: {fileID: 963194227}
   - component: {fileID: 963194226}
+  - component: {fileID: 963194229}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -505,12 +506,24 @@ Transform:
   m_GameObject: {fileID: 963194225}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: 150, z: 0}
+  m_LocalPosition: {x: 0, y: 80, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+--- !u!114 &963194229
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 963194225}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5d95c3386da8fc41917dc4eea6838f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1218270230
 GameObject:
   m_ObjectHideFlags: 0
@@ -520,8 +533,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1218270232}
-  - component: {fileID: 1218270231}
-  - component: {fileID: 1218270233}
   - component: {fileID: 1218270234}
   m_Layer: 0
   m_Name: Generator
@@ -530,25 +541,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1218270231
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1218270230}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: afb71a1a34c0ab5498ad1cec38ac8fb7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  width: 80
-  height: 60
-  smoothTimes: 5
-  clickTimes: 0
-  seed: 
-  useRandomSeed: 1
-  randomFillPercent: 60
 --- !u!4 &1218270232
 Transform:
   m_ObjectHideFlags: 0
@@ -564,18 +556,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1218270233
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1218270230}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e56e36e10717e674c884824e5187b9ca, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1218270234
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -590,13 +570,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mapWidth: 100
   mapHeight: 80
-  cubeSize: 1
   parent: {fileID: 1626647535}
-  treasureNum: 3
-  tile: {fileID: 2346356969926953570, guid: d608ecd36f1ae7946a49046a891ba5ac, type: 3}
-  reefPrefab: {fileID: 8583770301560888948, guid: ae561651b9e29b34b8ab5f49caafe21d, type: 3}
-  planePrefab: {fileID: 2346356969926953570, guid: 6e56cf8fdb33c7647becb77ac3778e22, type: 3}
-  treasure: {fileID: 6537985304187244366, guid: 08d9ca997b002d242b32110cd0e3df6a, type: 3}
+  mermaidNum: 8
+  trenchPrefab: {fileID: 2346356969926953570, guid: d608ecd36f1ae7946a49046a891ba5ac, type: 3}
+  reefPrefab: {fileID: 2346356969926953570, guid: 963c2d58f2beded46b602c4ffe87eacf, type: 3}
   seed: 
   useRandomSeed: 1
   initialReefChance: 45
